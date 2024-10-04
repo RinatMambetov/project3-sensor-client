@@ -1,44 +1,43 @@
 package dev.rinat;
 
-import dev.rinat.models.MeasurementDto;
 import dev.rinat.models.SensorDto;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.client.RestTemplate;
+import dev.rinat.utils.Helper;
+
 
 public class Main {
-    public static void main(String[] args) {
 
-        String sensorName = "my_sensor";
+    public static void main(String[] args) {
+        double minValue = -100.0;
+        double maxValue = 100.0;
+
         String serverUrl = "http://localhost:8080";
         String sensorRegUrl = "/sensors/registration";
         String measurementAddUrl = "/measurements/add";
+        String rainyDaysCountUrl = "/measurements/rainyDaysCount";
+        String measurementsUrl = "/measurements";
+        String pagesUrl = "?page=0&size=2&sort=value,asc";
 
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.set("Content-Type", "application/json");
-        RestTemplate restTemplate = new RestTemplate();
-        SensorDto sensorDto = new SensorDto(sensorName);
-        HttpEntity<SensorDto> sensorHttpEntity = new HttpEntity<>(sensorDto, httpHeaders);
+        SensorDto sensorDto = Helper.createSensor("my_sensor", serverUrl + sensorRegUrl);
 
-        try {
-            ResponseEntity<String> responseEntity =
-                    restTemplate.exchange(serverUrl + sensorRegUrl, HttpMethod.POST, sensorHttpEntity, String.class);
-            System.out.println("Response Status Code: " + responseEntity.getStatusCode());
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-        }
+        Helper.addMeasurements(sensorDto, 10, minValue, maxValue, serverUrl + measurementAddUrl, false);
 
-        MeasurementDto measurementDto = new MeasurementDto(11.2, true, sensorDto);
-        HttpEntity<MeasurementDto> measurementHttpEntity = new HttpEntity<>(measurementDto, httpHeaders);
+        Integer rainyDaysCount = Helper.getRainyDaysCount(serverUrl + rainyDaysCountUrl);
+        System.out.println("Rainy Days Count: " + rainyDaysCount);
 
-        try {
-            ResponseEntity<String> responseEntity =
-                    restTemplate.exchange(serverUrl + measurementAddUrl, HttpMethod.POST, measurementHttpEntity, String.class);
-            System.out.println("Response Status Code: " + responseEntity.getStatusCode());
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-        }
+//        ResponseEntity<String> measurementsResponseEntity =
+//                Helper.restExchange(restTemplate, serverUrl + measurementsUrl + pagesUrl, HttpMethod.GET, getEntity);
+//        ObjectMapper objectMapper = new ObjectMapper();
+//        try {
+//            if (measurementsResponseEntity != null) {
+//                System.out.println("Response Status Code: " + measurementsResponseEntity.getStatusCode());
+//                JsonNode rootNode = objectMapper.readTree(measurementsResponseEntity.getBody());
+//                JsonNode contentNode = rootNode.path("content");
+//                System.out.println("Content: " + contentNode.toString());
+//            }
+//        } catch (Exception e) {
+//            System.out.println(e.getMessage());
+//        }
     }
+
+
 }
