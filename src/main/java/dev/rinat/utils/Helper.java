@@ -1,5 +1,7 @@
 package dev.rinat.utils;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.rinat.models.MeasurementDto;
 import dev.rinat.models.SensorDto;
 import org.springframework.http.*;
@@ -15,6 +17,7 @@ public class Helper {
     static final RestTemplate restTemplate;
     static final HttpHeaders httpHeaders;
     static final HttpEntity<Object> getEntity;
+    static final ObjectMapper objectMapper;
 
     static {
         random = new Random();
@@ -22,6 +25,7 @@ public class Helper {
         httpHeaders = new HttpHeaders();
         httpHeaders.setContentType(MediaType.APPLICATION_JSON);
         getEntity = new HttpEntity<>(httpHeaders);
+        objectMapper = new ObjectMapper();
     }
 
     public static ResponseEntity<String> restExchange(RestTemplate restTemplate, String url, HttpMethod method, HttpEntity<?> httpEntity) {
@@ -78,4 +82,26 @@ public class Helper {
         }
         return null;
     }
+
+    public static String getMeasurements(String url) {
+        ResponseEntity<String> measurementsResponseEntity =
+                Helper.restExchange(restTemplate, url, HttpMethod.GET, getEntity);
+        try {
+            if (measurementsResponseEntity != null) {
+                System.out.println("Response Status Code: " + measurementsResponseEntity.getStatusCode());
+                JsonNode rootNode = objectMapper.readTree(measurementsResponseEntity.getBody());
+                JsonNode contentNode = rootNode.path("content");
+                return contentNode.toString();
+            }
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+        return null;
+    }
+
+    public static String getMeasurements(String url, int page, int size, String sort) {
+        String pagesUrl = "?page=" + page + "&size=" + size + "&sort=" + sort;
+        return getMeasurements(url + pagesUrl);
+    }
+    
 }
