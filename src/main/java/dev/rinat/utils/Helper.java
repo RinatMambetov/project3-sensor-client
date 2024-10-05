@@ -4,11 +4,16 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.rinat.models.MeasurementDto;
 import dev.rinat.models.SensorDto;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.knowm.xchart.SwingWrapper;
+import org.knowm.xchart.XYChart;
+import org.knowm.xchart.XYChartBuilder;
 import org.springframework.http.*;
 import org.springframework.web.client.RestTemplate;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Random;
 
@@ -17,7 +22,7 @@ public class Helper {
     static final RestTemplate restTemplate;
     static final HttpHeaders httpHeaders;
     static final HttpEntity<Object> getEntity;
-    static final ObjectMapper objectMapper;
+    static double value;
 
     static {
         random = new Random();
@@ -25,7 +30,7 @@ public class Helper {
         httpHeaders = new HttpHeaders();
         httpHeaders.setContentType(MediaType.APPLICATION_JSON);
         getEntity = new HttpEntity<>(httpHeaders);
-        objectMapper = new ObjectMapper();
+        value = 0.0;
     }
 
     public static ResponseEntity<String> restExchange(RestTemplate restTemplate, String url, HttpMethod method, HttpEntity<?> httpEntity) {
@@ -38,10 +43,20 @@ public class Helper {
     }
 
     public static double getRandomValue(double minValue, double maxValue) {
-        double randomNumber = minValue + (maxValue - minValue) * random.nextDouble();
-        BigDecimal bd = new BigDecimal(randomNumber);
-        bd = bd.setScale(1, RoundingMode.HALF_UP);
-        return bd.doubleValue();
+//        double randomNumber = minValue + (maxValue - minValue) * random.nextDouble();
+//        BigDecimal bd = new BigDecimal(randomNumber);
+//        bd = bd.setScale(1, RoundingMode.HALF_UP);
+//        return bd.doubleValue();
+        if (value > maxValue - 1) {
+            value = maxValue - 1;
+        } else if (value < minValue + 1) {
+            value = minValue + 1;
+        } else if (random.nextBoolean()) {
+            value += 1.0;
+        } else {
+            value -= 1.0;
+        }
+        return value;
     }
 
     public static boolean getRandomBoolean() {
@@ -54,7 +69,7 @@ public class Helper {
         ResponseEntity<String> newSensorResponseEntity =
                 Helper.restExchange(restTemplate, url, HttpMethod.POST, sensorHttpEntity);
         if (newSensorResponseEntity != null) {
-            System.out.println("Response Status Code: " + newSensorResponseEntity.getStatusCode());
+            System.out.println("CreateSensor Response Status Code: " + newSensorResponseEntity.getStatusCode());
         }
         return sensorDto;
     }
@@ -68,7 +83,7 @@ public class Helper {
             ResponseEntity<String> newMeasurementResponseEntity =
                     Helper.restExchange(restTemplate, url, HttpMethod.POST, measurementHttpEntity);
             if (newMeasurementResponseEntity != null && print) {
-                System.out.println("Response Status Code: " + newMeasurementResponseEntity.getStatusCode());
+                System.out.println("Measurements Response Status Code: " + newMeasurementResponseEntity.getStatusCode());
             }
         }
     }
@@ -77,7 +92,7 @@ public class Helper {
         ResponseEntity<String> rainyDaysCountResponseEntity =
                 Helper.restExchange(restTemplate, url, HttpMethod.GET, getEntity);
         if (rainyDaysCountResponseEntity != null) {
-            System.out.println("Response Status Code: " + rainyDaysCountResponseEntity.getStatusCode());
+            System.out.println("RainyDaysCount Response Status Code: " + rainyDaysCountResponseEntity.getStatusCode());
             return Integer.parseInt(Objects.requireNonNull(rainyDaysCountResponseEntity.getBody()));
         }
         return null;
@@ -88,7 +103,8 @@ public class Helper {
                 Helper.restExchange(restTemplate, url, HttpMethod.GET, getEntity);
         try {
             if (measurementsResponseEntity != null) {
-                System.out.println("Response Status Code: " + measurementsResponseEntity.getStatusCode());
+                System.out.println("GetMeasurements Response Status Code: " + measurementsResponseEntity.getStatusCode());
+                ObjectMapper objectMapper = new ObjectMapper();
                 JsonNode rootNode = objectMapper.readTree(measurementsResponseEntity.getBody());
                 JsonNode contentNode = rootNode.path("content");
                 return contentNode.toString();
@@ -103,5 +119,22 @@ public class Helper {
         String pagesUrl = "?page=" + page + "&size=" + size + "&sort=" + sort;
         return getMeasurements(url + pagesUrl);
     }
-    
+
+    public static void displayChart(String measurements) {
+        JSONArray jsonArray = new JSONArray(measurements);
+        List<Integer> xData = new ArrayList<>();
+        List<Double> yData = new ArrayList<>();
+
+        for (int i = 0; i < jsonArray.length(); i++) {
+            JSONObject jsonObject = jsonArray.getJSONObject(i);
+            xData.add(i);
+            yData.add(jsonObject.getDouble("value"));
+        }
+
+        XYChart chart = new XYChartBuilder().width(1000).height(600)
+                .title("Temperature from Sensor").xAxisTitle("Time").yAxisTitle("Temperature").build();
+        chart.addSeries("Sensor", xData, yData);
+
+        new SwingWrapper<>(chart).displayChart();
+    }
 }

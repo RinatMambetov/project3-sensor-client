@@ -18,16 +18,17 @@ public class Main {
 
         SensorDto sensorDto = Helper.createSensor("my_sensor", serverUrl + sensorRegUrl);
 
-        Helper.addMeasurements(sensorDto, 10, minValue, maxValue, serverUrl + measurementAddUrl, false);
+        Helper.addMeasurements(sensorDto, 1000, minValue, maxValue, serverUrl + measurementAddUrl, false);
 
         Integer rainyDaysCount = Helper.getRainyDaysCount(serverUrl + rainyDaysCountUrl);
         System.out.println("Rainy Days Count: " + rainyDaysCount);
 
         String measurements = Helper.getMeasurements(serverUrl + measurementsUrl);
-        System.out.println("Measurements: " + measurements);
+//        System.out.println("Measurements: " + measurements);
 
         String pageOfMeasurements = Helper.getMeasurements(serverUrl + measurementsUrl, 1, 5, "value,desc");
         System.out.println("Page of Measurements: " + pageOfMeasurements);
 
+        Helper.displayChart(measurements);
     }
 }
