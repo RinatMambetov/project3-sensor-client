@@ -43,10 +43,13 @@ public class Helper {
     }
 
     public static double getRandomValue(double minValue, double maxValue) {
+//        for realy random chart
 //        double randomNumber = minValue + (maxValue - minValue) * random.nextDouble();
 //        BigDecimal bd = new BigDecimal(randomNumber);
 //        bd = bd.setScale(1, RoundingMode.HALF_UP);
 //        return bd.doubleValue();
+
+//        for smooth chart
         if (value > maxValue - 1) {
             value = maxValue - 1;
         } else if (value < minValue + 1) {
